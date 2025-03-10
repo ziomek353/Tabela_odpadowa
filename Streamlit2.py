@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 📌 Słownik z kodami odpadu i odpowiadającymi im opisami
-odpady_dict = {
+#Słownik z kodami odpadu i odpowiadającymi im opisami
+odpady = {
     "": "",    
     "02 01 03": "Odpadowa masa roślinna",
     "03 01 04*": "Trociny, wióry, ścinki, drewno, płyta wiórowa i fornir zawierające substancje niebezpieczne",
@@ -54,32 +54,37 @@ odpady_dict = {
     "20 01 21*": "Lampy fluorescencyjne zawierające rtęć",
 }
 
-# 📌 Nagłówek aplikacji
+procesy_odzysku = ["-", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15"]
+
+#Nagłówek aplikacji
 st.title("Tabela Odpadowa - Test")
 
-# 📌 Inicjalizacja przechowywania danych w sesji
 if "data" not in st.session_state:
     st.session_state.data = []
 
-# 📌 Formularz do dodawania nowych danych
+#Formularz do dodawania nowych danych
 with st.form("form_danych", clear_on_submit=True):
     sklep = st.number_input("Numer sklepu", min_value=1, step=1, format="%d", value=None)
     data_odpadu = st.date_input("Data przekazania odpadu", key="data_odpadu", value=None)
-    kod_odpadu = st.selectbox("Kod odpadu", options=[f"{kod} - {opis}" for kod, opis in odpady_dict.items()])
+    kod_odpadu = st.selectbox("Kod odpadu", options=[f"{kod} - {opis}" for kod, opis in odpady.items()])
     
-    wybrany_kod = kod_odpadu.split(" - ")[0]  
-    opis_kodu = odpady_dict.get(wybrany_kod, "")
+    wybrany_kod = kod_odpadu.split(" - ")[0]  # Wyciągnięcie kodu odpadu
+    opis_kodu = odpady.get(wybrany_kod, "")  # Pobranie opisu
     
-    masa_odpadu = st.number_input("Masa przekazanych odpadów [tony (Mg)]", min_value=0.0, value=None)  # Brak domyślnej wartości
-    kwota_netto = st.number_input("Kwota netto [zł]", min_value=-500.0, value=None)  # Brak domyślnej wartości
-    proces_odzysku = st.text_input("Proces odzysku lub unieszkodliwiania odpadów", value="")  # Puste pole tekstowe
-    ilosc_pojemnikow = st.number_input("Ilość pojemników", min_value=0, value=None)  # Brak domyślnej wartości
-    pojemnosc_pojemnikow = st.number_input("Pojemność pojemników [m3]", min_value=0.0, value=None)  # Brak domyślnej wartości
-    odbiorca_odpadów = st.text_input("Odbiorca Odpadów", value="")  # Puste pole tekstowe
+    masa_odpadu = st.number_input("Masa przekazanych odpadów [tony (Mg)]", min_value=0.0, value=None)  
+    kwota_netto = st.number_input("Kwota netto [zł]", min_value=-500.0, value=None)
+    
+    # Dodanie rozwijanej listy procesów odzysku
+    proces_odzysku = st.selectbox("Proces odzysku", options=procesy_odzysku)
+
+    
+    ilosc_pojemnikow = st.number_input("Liczba pojemników", min_value=0, value=None)
+    pojemnosc_pojemnikow = st.number_input("Pojemność pojemników [m3]", min_value=0.0, value=None)
+    odbiorca_odpadów = st.text_input("Odbiorca Odpadów", value="")  
     
     submit = st.form_submit_button("Dodaj dane")
 
-# 📌 Zapis nowego wpisu do sesji
+#Zapis nowego wpisu do sesji
 if submit:
     new_row = {
         "Numer sklepu": sklep,
@@ -89,18 +94,20 @@ if submit:
         "Masa [Mg]": masa_odpadu,
         "Kwota netto [zł]": kwota_netto,
         "Proces odzysku": proces_odzysku,
+        "Liczba pojemników": ilosc_pojemnikow,
+        "Pojemność pojemników [m3]": pojemnosc_pojemnikow,
+        "Odbiorca odpadów": odbiorca_odpadów,
     }
     st.session_state.data.append(new_row)
     st.success("Dane dodane!")
 
-# 📌 Edytowalna tabela danych
+#Edytowalna tabela danych
 if st.session_state.data:
     df = pd.DataFrame(st.session_state.data)  # Konwersja listy słowników na DataFrame
     
-    # 📌 Edytowalna tabela
+    #Edytowalna tabela
     edited_df = st.data_editor(df, key="editable_table", num_rows="dynamic")
     
-    # 📌 Aktualizacja danych w sesji
     st.session_state.data = edited_df.to_dict("records")
     
     st.write("Możesz edytować dane  dopóki nie odświeżysz strony!")
